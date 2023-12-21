@@ -1,107 +1,92 @@
-// randomly returns rock, paper or scissors
-function computerChoice(){
-    let random_number = Math.floor(Math.random() * 3);
-    if (random_number === 0){
-        return "rock";
-    } else if (random_number === 1){
-        return "paper";
-    } else {
-        return "scissors";
-    }
-}
-
-// uses the player input as a parameter and plays the round
-function playRound(playerSelection) {
-    // declares the result of each round
-    const result_declaration = document.querySelector('#round-result');
-
-    let computerSelection;
-    computerSelection = computerChoice();
-
-    let playerWin = new Event('playerWin');
-    let computerWin = new Event('computerWin');
-
-    if (playerSelection === computerSelection){
-        result_declaration.textContent = ("Tie! Roll again.")
-    } else if (playerSelection === 'rock') {
-        if (computerSelection === 'paper') {
-            result_declaration.textContent = "You lose! Paper beats rock";
-            computer.dispatchEvent(computerWin);
-        } else {
-            result_declaration.textContent = "You win! Rock beats scissors";
-            player.dispatchEvent(playerWin);
-        }
-    } else if (playerSelection === 'paper') {
-        if (computerSelection === 'rock') {
-            result_declaration.textContent = "You win! Paper beats rock";
-            player.dispatchEvent(playerWin);
-        } else {
-            result_declaration.textContent = "You lose! Scissors beats paper";
-            computer.dispatchEvent(computerWin);
-        }
-    } else {
-        if (computerSelection === 'paper') {
-            result_declaration.textContent = "You win! Scissors beats paper";
-            player.dispatchEvent(playerWin);
-        } else {
-            result_declaration.textContent = "You lose! Rock beats scissors";
-            computer.dispatchEvent(computerWin);
-        }
-    }
-}
-
 // the three buttons representing rock, paper, scissors
 const rock = document.querySelector('#rock');
 const paper = document.querySelector('#paper');
 const scissors = document.querySelector('#scissors');
 
 // when any of the buttons are clicked, run playRound()
-rock.addEventListener('click', () => playRound('rock'));
-paper.addEventListener('click', () => playRound('paper'));
-scissors.addEventListener('click', () => playRound('scissors'))
+rock.addEventListener('click', () => playRound('Rock'));
+paper.addEventListener('click', () => playRound('Paper'));
+scissors.addEventListener('click', () => playRound('Scissors'))
 
 // variables storing player score and computer score
 let playerScore = 0;
 let computerScore = 0;
 
-// references to text fields displaying player and computer score
-const player = document.querySelector('#player-score');
-const computer = document.querySelector('#computer-score');
+// win condition
+const WINNING_NUMBER = 5;
 
-// the player score field listens for a playerWin event.
-player.addEventListener('playerWin', (e) => {
-    playerScore += 1;
-    e.target.textContent = "Player: " + playerScore;
+// randomly returns rock, paper or scissors
+function computerChoice(){
+    number_mapping = ['Rock', 'Paper', 'Scissors'];
+    let random_number = Math.floor(Math.random() * 3);
+    return number_mapping[random_number];
+}
 
-    // if the playerscore hits 5, send a game-end event to gameResult indicating that the player won
-    if (playerScore === 5) {
-        let playerVictory = new CustomEvent('gameEnd', {
-            detail: {
-                winner: 'Player'
-            }
-        });
-        gameResult.dispatchEvent(playerVictory);
+// uses the player input as a parameter and plays the round
+function playRound(playerSelection) {
+    // gets computer selection
+    let computerSelection = computerChoice();
+
+    // declares the result of each round, and result of overall game
+    const resultDeclaration = document.querySelector('#round-result');
+    const gameResult = document.querySelector('#game-result');
+    const gameFinishedDiv = document.querySelector('#game-finished');
+
+    // dictionary holding each move's win condition
+    let winConditions = {
+        'Rock': 'Scissors',
+        'Scissors': 'Paper', 
+        'Paper': 'Rock'
     }
-})
-
-// computer score field listens for a computerWin event.
-computer.addEventListener('computerWin', (e) => {
-    computerScore += 1;
-    e.target.textContent = "Computer: " + computerScore;
-
-    // if the computer score hits 5, send a game-end event to gameResult indiciating that the computer won
-    if (computerScore === 5) {
-        let computerVictory = new CustomEvent('gameEnd', {
-            detail: {
-                winner: 'Computer'
-            }
-        });
-        gameResult.dispatchEvent(computerVictory);
+    
+    // displays result based on outcome
+    if (playerSelection === computerSelection){
+        resultDeclaration.textContent = ("Tie! Roll again.");
+    } else if (winConditions[playerSelection] === computerSelection) {
+        resultDeclaration.textContent = ("You win! " + playerSelection + " beats " + computerSelection);
+        playerScore++;
+    } else {
+        resultDeclaration.textContent = ("You lose! " + computerSelection + " beats " + playerSelection);
+        computerScore++;
     }
-})
 
-// when someone wins, display it in the gameResult field
-const gameResult = document.querySelector('#game-result');
-gameResult.addEventListener('gameEnd', (e) => {
-    gameResult.textContent = e.detail.winner + ' wins!';
-})
+    displayScores()
+
+    // displays message if either one hits 5 points
+    if (playerScore === WINNING_NUMBER || computerScore === WINNING_NUMBER){
+        if(playerScore === WINNING_NUMBER) {
+            gameResult.textContent = "Player wins " + playerScore + " - " + computerScore; 
+        } else {
+            gameResult.textContent = "Computer wins " + computerScore + " - " + playerScore;
+        }
+        const replayButton = document.createElement('button');
+        replayButton.textContent = "Click to play again";
+        replayButton.addEventListener('click', (e) => refresh(e))
+        gameFinishedDiv.appendChild(replayButton);
+    }
+}
+
+// basically 'refreshes' the state of the game
+function refresh(e) {
+    // removes the button which launched the callback
+    e.target.remove()
+    playerScore = 0;
+    computerScore = 0;
+
+    // displays the scores
+    displayScores()
+
+    // empties the game result field, and refreshes the result declaration field
+    const resultDeclaration = document.querySelector('#round-result');
+    const gameResult = document.querySelector('#game-result')
+    resultDeclaration.textContent = 'Press a button to start playing!'
+    gameResult.textContent = ''
+}
+
+// displays scores
+function displayScores () {
+    const playerScoreField = document.querySelector('#player-score');
+    const computerScoreField = document.querySelector('#computer-score');
+    playerScoreField.textContent = 'Player: ' + playerScore;
+    computerScoreField.textContent = 'Computer: ' + computerScore;
+}
